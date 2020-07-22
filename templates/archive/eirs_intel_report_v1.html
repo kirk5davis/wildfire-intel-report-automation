@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+
+    <!-- bootstrap 4.0.0 css - must be 4.0.0 in order to jive with PDFKit -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+</head>
+<body>
+        <div class="row align-items-center bg-danger ml-0 mr-0">
+            <div class=col-md-3>
+                <img class="py-2 px-2" height="156px" width="160px" src="https://upload.wikimedia.org/wikipedia/en/9/9c/Washington_State_Department_of_Natural_Resources_logo.png"/>
+            </div>
+            <div class=col-md-9>
+                <span class="h1 text-white font-weight-bold">WA DNR Wildfire Report</span><br>
+                <small class="text-white font-weight-bold ">as of {{ time_of_report }}</small>
+            </div>
+        </div>
+        <div class="row ml-0 mr-0">
+            <div class="col-md-6 p-2 text-center border">
+                <h2>Response Statistics</h2>
+                
+                <small>This category outlines DNR responses to fire which any response. </small>
+                <br>
+                {{ response_pivot_table }}
+
+            </div>
+            <div class="col-md-6 p-2 text-center border">
+                <h2>Fire Statistics</h2>
+                <small>This category outlines fires and acres burned on DNR protected lands. </small>
+                <br>
+                {{ dnr_pivot_table }}
+            </div>
+        </div>
+        <div class="row ml-0 mr-0">
+            <div class="col-md-12 text-center border">
+                <h2>Fire Cause Statistics</h2>
+                <small>This category outlines the causes to-date of fires in WA.</small>
+                <br>
+                {{ causes_pivot_table }}
+            </div>
+        </div>
+        <div class="row ml-0 mr-0 bg-secondary">
+            <div class="col-md-12 text-center text-white">
+                <br>
+                <h2 class="font-weight-bold">END OF REPORT</h2>
+                <em><small class="muted">Report created from EIRS on: {{ footer_time_of_report }}</small></em>
+                <p><em>DATA DISCLAIMER: put your disclaimer here!!!</em></p>
+                <br>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

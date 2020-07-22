@@ -1,0 +1,15 @@
+steps to build:
+
+- created venv
+
+- system packages flag = True in the venv config
+
+- activated venv
+
+- pip installed jinja2, subprocess32
+
+- installed Chrome (pointed at binaries)
+
+- copied "tcl" folder from python install "C:\Python27\ArcGISx6410.6\tcl" into the new venv folder
+	- this fixed an error when Tkinter tries to be called from matplotlib in the venv set-up
+

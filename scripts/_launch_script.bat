@@ -1,0 +1,1 @@
+CALL \\dnr\divisions\rp_gis\projects\wildfire_intel_report_automation\venv\Scripts\activate.bat && python \\dnr\divisions\rp_gis\projects\wildfire_intel_report_automation\scripts\wildfire_intel_automation.py 
