@@ -36,8 +36,8 @@ PDF_TIMESTAMP = time.strftime("%Y%m%d_%H00")
 LOG_FILE = None  # placeholder
 ROPA_EMER_INCIDENT_SV = r"\\dnr\divisions\rp_gis\users\kdav490\software\connection_files\kdav490_ropa.sde\ROPA.EMER_INCIDENT_SV"
 FIRE_POINTS_MXD_PATH = r"\\dnr\divisions\rp_gis\projects\wildfire_intel_report_automation\mxd\fire_points_map_v10_6.mxd"
-CURRENT_YEAR = 2020
-EARLIEST_STAT_YEAR = 2010
+CURRENT_YEAR = datetime.datetime.now().year
+EARLIEST_STAT_YEAR = (CURRENT_YEAR - 10)
 CHROME_INSTALL_DIR = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
 
 
@@ -75,7 +75,11 @@ def add_value_labels(ax, decimal=False, spacing=5):
 
         # Use Y value as label and format number with one decimal place
         if decimal:
-            label = "{:.1f}".format(y_value)
+            if y_value > 1000:
+                new_val = float(y_value)/float(1000)
+                label = "{:.1f}k".format(new_val)
+            else:
+                label = "{:.1f}".format(y_value)
         else:
             label = "{:.0f}".format(y_value)
 
@@ -101,9 +105,7 @@ def set_last_report_date_query():
     # change to always look back 72hrs -
     time_delta = datetime.timedelta(3)
     now_delta = datetime.datetime.now() - time_delta
-    
-    return "START_DT >= timestamp '{}-{}-{} 00:00:00'".format(CURRENT_YEAR, str(now_delta.month).zfill(2), str(now_delta.day).zfill(2))
-
+    return "START_DT >= timestamp '{}-{}-{} 00:00:00'".format(str(now_delta.year), str(now_delta.month).zfill(2), str(now_delta.day).zfill(2))
 
 # generic log/file logging
 def log_to_log_and_console(func):
@@ -238,8 +240,8 @@ if __name__ == '__main__':
         fig.savefig(out_causes_plot, dpi=600)
 
         # step 5) gather all data for a certain years
-        year_historic_to_date_fire_count = {i+2010:0 for i in range(11)}
-        year_historic_to_date_acres_burned = {i+2010:0.0 for i in range(11)}
+        year_historic_to_date_fire_count = {i+EARLIEST_STAT_YEAR:0 for i in range(11)}
+        year_historic_to_date_acres_burned = {i+EARLIEST_STAT_YEAR:0.0 for i in range(11)}
         # updated query to address dropped null values in the PROTECTION_TYPE category
         historic_dnr_fires_query = "(PROTECTION_TYPE <> 'DNR Assist Other Agency' OR PROTECTION_TYPE IS NULL) AND FIREEVNT_CLASS_LABEL_NM = 'Classified'"
         test_bad_vals = list()
@@ -358,8 +360,9 @@ if __name__ == '__main__':
         log("script completed")
         log("sending email")
         send_email("kirk.davis@dnr.wa.gov", 
-                    ['kirk.davis@dnr.wa.gov', 'sarah.krock@dnr.wa.gov', 'josh.clark@dnr.wa.gov', 'angie.lane@dnr.wa.gov'], 
-                    "[TESTING] Wildfire Intel Report for {}".format(PDF_TIMESTAMP), 
+                    # ['kirk.davis@dnr.wa.gov', 'sarah.krock@dnr.wa.gov', 'angie.lane@dnr.wa.gov'], 
+                    ['kirk.davis@dnr.wa.gov'], # for testing
+                    "Wildfire Intel Report for {}".format(PDF_TIMESTAMP), 
                     "Hello,\n\n The Wildfire Intel Automation Report ran successfully at {}. \n\nYou'll find the report attached to this email. Runtime docs can be found here: {}\n\n See you next time,\nThe Intel Report Robot  ;)".format(time.ctime(), run_dir),
                     [out_pdf])
 
