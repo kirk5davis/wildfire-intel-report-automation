@@ -1,4 +1,4 @@
-# **wildfire-intel-report-automation**
+# **wildfire-intel-report-automation** 🔥
 
 ------
 

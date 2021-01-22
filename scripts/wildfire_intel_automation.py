@@ -34,6 +34,7 @@ REPORT_DATE = time.strftime("%m/%d/%Y")
 REPORT_DATE_SHORT = time.strftime("%m/%d")
 PDF_TIMESTAMP = time.strftime("%Y%m%d_%H00")
 LOG_FILE = None  # placeholder
+NO_DATA_PLACEHOLDER_PNG = r"K:\projects\wildfire_intel_report_automation\templates\static\no-data-graph_5x8_land.png"
 ROPA_EMER_INCIDENT_SV = r"\\dnr\divisions\rp_gis\users\kdav490\software\connection_files\kdav490_ropa.sde\ROPA.EMER_INCIDENT_SV"
 FIRE_POINTS_MXD_PATH = r"\\dnr\divisions\rp_gis\projects\wildfire_intel_report_automation\mxd\fire_points_map_v10_6.mxd"
 CURRENT_YEAR = datetime.datetime.now().year
@@ -190,6 +191,7 @@ if __name__ == '__main__':
 
         # step 4) do the pivots
         # response statistic totals
+        log("building response statistics pivot table")
         tbl_response_stats = pd.pivot_table(df, values=["RESPONSE_COUNT", "ACRES_BURNED"], index=["WA_STATE_SIDE"],
                      aggfunc={"RESPONSE_COUNT":np.sum, "ACRES_BURNED":np.sum}, fill_value=0, margins=True, margins_name="Total")
         tbl_response_stats = tbl_response_stats.reindex(columns=["RESPONSE_COUNT", "ACRES_BURNED"])
@@ -198,10 +200,9 @@ if __name__ == '__main__':
         tbl_response_stats[["DNR Responses"]] = tbl_response_stats[["DNR Responses"]].applymap(np.int64)
 
         # dnr statistic totals
+        log("building DNR statistics pivot table")
         tbl_dnr_stats = df[(df["FIREEVNT_CLASS_LABEL_NM"] == 'Classified') & (df["PROTECTION_TYPE"] != 'DNR Assist Other Agency')].pivot_table(values=["RESPONSE_COUNT", "ACRES_BURNED"], index=["WA_STATE_SIDE"],
                 aggfunc={"RESPONSE_COUNT":np.sum, "ACRES_BURNED":np.sum}, fill_value=0, margins=True, margins_name="Totals")
-        # tbl_dnr_stats = df[(df["FIREEVNT_CLASS_LABEL_NM"] == 'Classified')].pivot_table(values=["RESPONSE_COUNT", "ACRES_BURNED"], index=["WA_STATE_SIDE"],
-        #         aggfunc={"RESPONSE_COUNT":np.sum, "ACRES_BURNED":np.sum}, fill_value=0, margins=True, margins_name="Total")
         tbl_dnr_stats = tbl_dnr_stats.reindex(columns=["RESPONSE_COUNT", "ACRES_BURNED"])
         tbl_dnr_stats.columns = ["DNR Fires", "DNR Acres"]
         tbl_dnr_stats.index.name = ""
@@ -209,15 +210,13 @@ if __name__ == '__main__':
         tbl_dnr_stats[["DNR Fires"]] = tbl_dnr_stats[["DNR Fires"]].applymap(np.int64)
         
         # statewide general causes
+        log("building general causes dataframe")
         tbl_dnr_causes = df[(df["FIREEVNT_CLASS_LABEL_NM"] == 'Classified') & (df["PROTECTION_TYPE"] != 'DNR Assist Other Agency')].pivot_table(values=["RESPONSE_COUNT"], index=["FIREGCAUSE_LABEL_NM"],
                 aggfunc=np.sum, fill_value=0, margins=True, margins_name="Totals")
-        # tbl_dnr_causes = df[(df["FIREEVNT_CLASS_LABEL_NM"] == 'Classified')].pivot_table(values=["RESPONSE_COUNT"], index=["FIREGCAUSE_LABEL_NM"],
-        #          aggfunc=np.sum, fill_value=0, margins=True, margins_name="Total")
         tbl_dnr_causes[["RESPONSE_COUNT"]] = tbl_dnr_causes[["RESPONSE_COUNT"]].applymap(np.int64)
         tbl_dnr_causes.columns = ["Count"]
         tbl_dnr_causes.index.name = ""
         tbl_dnr_causes[["Count"]] = tbl_dnr_causes[["Count"]].applymap(np.int64)
-
         df_causes = df[((df["FIREEVNT_CLASS_LABEL_NM"] == 'Classified') & (df["PROTECTION_TYPE"] != 'DNR Assist Other Agency'))].groupby(["FIREGCAUSE_LABEL_NM"])["RESPONSE_COUNT"].sum()   
         cause_list = sorted([(i, df_causes.to_dict()[i]) for i in df_causes.to_dict()])
         cause_labels = "-".join([str(i[0]) for i in cause_list])
@@ -225,21 +224,28 @@ if __name__ == '__main__':
 
         # # generate bar chart of causes
         # # set plot styling
+        log("build bar chart of DNR fire causes")
         out_causes_plot = os.path.join(out_dir, "causes_graphic_{}.png".format(PDF_TIMESTAMP))
         style.use("ggplot")
         df_plotting = df[((df["FIREEVNT_CLASS_LABEL_NM"] == 'Classified') & (df["PROTECTION_TYPE"] != 'DNR Assist Other Agency'))]
         df_causes = df_plotting.groupby(["FIREGCAUSE_LABEL_NM"])["RESPONSE_COUNT"].sum()
-        ax1 = df_causes.plot(kind='bar', figsize=(8,5), color='#c80b2e', fontsize=8, rot=45)
-        ax1.set_alpha(0.8)
-        ax1.set_ylabel("Number of Fires", fontsize=15)
-        ax1.set_xlabel("General Cause Category", fontsize=15)
-        add_value_labels(ax1)
-        fig = plt.gcf()
-        plt.tight_layout()
-        plt.draw()
-        fig.savefig(out_causes_plot, dpi=600)
+        ## test for no data in early season, throws type error if empty
+        try:
+            ax1 = df_causes.plot(kind='bar', figsize=(8,5), color='#c80b2e', fontsize=8, rot=45)
+            ax1.set_alpha(0.8)
+            ax1.set_ylabel("Number of Fires", fontsize=15)
+            ax1.set_xlabel("General Cause Category", fontsize=15)
+            add_value_labels(ax1)
+            fig = plt.gcf()
+            plt.tight_layout()
+            plt.draw()
+            fig.savefig(out_causes_plot, dpi=600)
+        except TypeError:
+            log("no data available for bar chart, setting placeholder 'no data' image")
+            out_causes_plot = NO_DATA_PLACEHOLDER_PNG
 
         # step 5) gather all data for a certain years
+        log("gathering data for the last 10 years")
         year_historic_to_date_fire_count = {i+EARLIEST_STAT_YEAR:0 for i in range(11)}
         year_historic_to_date_acres_burned = {i+EARLIEST_STAT_YEAR:0.0 for i in range(11)}
         # updated query to address dropped null values in the PROTECTION_TYPE category
@@ -262,11 +268,11 @@ if __name__ == '__main__':
 
         acres_burned_sort = sorted(year_historic_to_date_acres_burned.items())   
         fire_count_sort = sorted(year_historic_to_date_fire_count.items())
-
-        # continue here!
         x_acres_burned, y_acres_burned = zip(*acres_burned_sort)
         x_fire_count, y_fire_count = zip(*fire_count_sort)
 
+        log("building bar charts for last 10 year graphics")
+        log("---fire counts chart")
         fig1, axs = plt.subplots(1, 2, figsize=(12,3))
         x_pos1 = [2*i for i, _ in enumerate(x_fire_count)]
         years = list(x_fire_count)
@@ -283,7 +289,7 @@ if __name__ == '__main__':
         plt.setp(axs[0].get_legend().get_texts(), fontsize='8')
         plt.setp(axs[0].get_xticklabels(), rotation=45)
 
-        
+        log("---acres burned chart")
         axs[1].bar(x_pos1, y_acres_burned, color='#003865', align='center', tick_label=years)
         axs[1].set_alpha(0.8)
         add_value_labels(axs[1], decimal=True)
@@ -297,7 +303,7 @@ if __name__ == '__main__':
         plt.setp(axs[1].get_legend().get_texts(), fontsize='8')
         plt.setp(axs[1].get_xticklabels(), rotation=45)
 
-        # plt.setp(axs, xticks=x_pos1, xticklabels=years)
+        log("generating chart for both")
         vals_to_date_plot = os.path.join(out_dir, "vals_to_date_plot_{}.png".format(PDF_TIMESTAMP))
         fig1.tight_layout()
         fig1.savefig(vals_to_date_plot, dpi=600, bbox_inches='tight')
@@ -324,6 +330,7 @@ if __name__ == '__main__':
 
 
         # step 5) export report
+        log("exporting HTML report")
         env = Environment(loader=FileSystemLoader(r"\\dnr\divisions\rp_gis\projects\wildfire_intel_report_automation\templates"))
         template = env.get_template("eirs_intel_report_v3.html")
         template_vars = {"title": "Fire Statistics",
@@ -360,8 +367,7 @@ if __name__ == '__main__':
         log("script completed")
         log("sending email")
         send_email("kirk.davis@dnr.wa.gov", 
-                    # ['kirk.davis@dnr.wa.gov', 'sarah.krock@dnr.wa.gov', 'angie.lane@dnr.wa.gov'], 
-                    ['kirk.davis@dnr.wa.gov'], # for testing
+                    ['kirk.davis@dnr.wa.gov', 'sarah.krock@dnr.wa.gov', 'angie.lane@dnr.wa.gov'], 
                     "Wildfire Intel Report for {}".format(PDF_TIMESTAMP), 
                     "Hello,\n\n The Wildfire Intel Automation Report ran successfully at {}. \n\nYou'll find the report attached to this email. Runtime docs can be found here: {}\n\n See you next time,\nThe Intel Report Robot  ;)".format(time.ctime(), run_dir),
                     [out_pdf])
