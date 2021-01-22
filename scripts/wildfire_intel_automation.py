@@ -354,7 +354,6 @@ if __name__ == '__main__':
             html_file.close()
 
         out_pdf = os.path.join(run_dir, "eirs_report_{}.pdf".format(PDF_TIMESTAMP))
-        # out_pdf_b = os.path.join(run_dir, "eirs_report_{}.pdf".format(PDF_TIMESTAMP))
 
         cpdf = ChromePDF(CHROME_INSTALL_DIR)
         with open(out_pdf, 'w') as out_file:
@@ -362,7 +361,6 @@ if __name__ == '__main__':
                 log("pdf output successful")
             else:
                 log("pdf output failed")
-        # pdfkit.from_string(html_out, out_pdf_b, options=PDFKIT_OPTIONS)
         
         log("script completed")
         log("sending email")
