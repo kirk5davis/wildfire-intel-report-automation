@@ -34,7 +34,7 @@ REPORT_DATE = time.strftime("%m/%d/%Y")
 REPORT_DATE_SHORT = time.strftime("%m/%d")
 PDF_TIMESTAMP = time.strftime("%Y%m%d_%H00")
 LOG_FILE = None  # placeholder
-NO_DATA_PLACEHOLDER_PNG = r"K:\projects\wildfire_intel_report_automation\templates\static\no-data-graph_5x8_land.png"
+NO_DATA_PLACEHOLDER_PNG = r"\\dnr\divisions\rp_gis\projects\wildfire_intel_report_automation\templates\static\no-data-graph_5x8_land.png"
 ROPA_EMER_INCIDENT_SV = r"\\dnr\divisions\rp_gis\users\kdav490\software\connection_files\kdav490_ropa.sde\ROPA.EMER_INCIDENT_SV"
 FIRE_POINTS_MXD_PATH = r"\\dnr\divisions\rp_gis\projects\wildfire_intel_report_automation\mxd\fire_points_map_v10_6.mxd"
 CURRENT_YEAR = datetime.datetime.now().year
@@ -323,7 +323,7 @@ if __name__ == '__main__':
                 layer.definitionQuery = last_report_dt_query
                 break
         mxd.save()
-        arcpy.mapping.ExportToPNG(mxd, out_map_png, data_frame="PAGE_LAYOUT", resolution=600)
+        arcpy.mapping.ExportToPNG(mxd, out_map_png, data_frame="PAGE_LAYOUT", resolution=800)
         del mxd
         log(arcpy.GetMessages())
         
